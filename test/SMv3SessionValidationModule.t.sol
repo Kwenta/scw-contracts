@@ -10,7 +10,7 @@ import {
     UserOperationLib
 } from "test/utils/UserOperationSignature.sol";
 import {IEngine} from "src/kwenta/smv3/IEngine.sol";
-import {IERC7412} from "src/kwenta/smv3/IERC7412.sol";
+import {EIP7412} from "src/kwenta/smv3/EIP7412.sol";
 
 contract SMv3SessionValidationModuleTest is Bootstrap {
     address signer;
@@ -73,7 +73,7 @@ contract SMv3SessionValidationModuleTest is Bootstrap {
         validSelectors.push(IEngine.modifyCollateral.selector);
         validSelectors.push(IEngine.commitOrder.selector);
         validSelectors.push(IEngine.invalidateUnorderedNonces.selector);
-        validSelectors.push(IERC7412.fulfillOracleQuery.selector);
+        validSelectors.push(EIP7412.fulfillOracleQuery.selector);
         validSelectors.push(IEngine.depositEth.selector);
         validSelectors.push(IEngine.withdrawEth.selector);
     }
@@ -85,10 +85,15 @@ contract ValidateSessionParams is SMv3SessionValidationModuleTest {
             // ensure each valid selector is accepted
             funcCallData = abi.encode(validSelectors[i], bytes32(""));
 
-            if (validSelectors[i] == IEngine.depositEth.selector) {
-                callValue = 1; // valid for depositEth
+            if (
+                validSelectors[i] == IEngine.depositEth.selector
+                    || validSelectors[i] == EIP7412.fulfillOracleQuery.selector
+            ) {
+                // ONLY non-zero call values are valid when
+                // calling depositEth() or fulfillOracleQuery()
+                callValue = 1;
             } else {
-                callValue = 0; // invalid for depositEth
+                callValue = 0;
             }
 
             address retSessionKey = smv3SessionValidationModule
@@ -135,6 +140,9 @@ contract ValidateSessionParams is SMv3SessionValidationModuleTest {
 
             if (validSelectors[i] == IEngine.depositEth.selector) {
                 callValue = 0; // i.e. invalid for depositEth
+            } else if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector)
+            {
+                callValue = 0; // valid for fulfillOracleQuery
             } else {
                 callValue = invalid_callValue;
             }
@@ -224,6 +232,9 @@ contract ValidateSessionUserOp is SMv3SessionValidationModuleTest {
 
             if (validSelectors[i] == IEngine.depositEth.selector) {
                 callValue = 1; // valid for depositEth
+            } else if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector)
+            {
+                callValue = 1; // valid for fulfillOracleQuery
             } else {
                 callValue = 0; // invalid for depositEth
             }
@@ -292,6 +303,9 @@ contract ValidateSessionUserOp is SMv3SessionValidationModuleTest {
 
             if (validSelectors[i] == IEngine.depositEth.selector) {
                 callValue = 0; // i.e. invalid for depositEth
+            } else if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector)
+            {
+                callValue = 0; // valid for fulfillOracleQuery
             } else {
                 callValue = invalid_callValue;
             }
