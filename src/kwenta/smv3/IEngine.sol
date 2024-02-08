@@ -167,6 +167,20 @@ interface IEngine {
         returns (bool);
 
     /*//////////////////////////////////////////////////////////////
+                            MulticallPayable
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Executes multiple delegate calls to the current contract, aggregating the results.
+    /// @dev The `multicall` method allows for batch execution of multiple calls within a single transaction to the current contract, using `DELEGATECALL`.
+    /// @dev Each call's input data is passed in the `data` parameter as an array of bytes, where each element represents a call's calldata. The method executes each call, aggregates the encoded results in a `bytes[] memory` array, and returns this array. If any call reverts, the entire operation reverts, and the error is propagated. This function is non-payable to prevent double-spending vulnerabilities. For efficiency, and to avoid state changes after the calls, it should be used at the end of transactions that expect a `bytes[] memory` return type. Due to potential security issues with certain patterns like ERC2771, users are advised to consider safer alternatives for use cases involving complex call data manipulations.
+    /// @param data An array of calldata bytes, each representing a distinct call to be executed in the context of the current contract.
+    /// @return results An array of bytes, each encoding the result of a respective delegate call executed within the context of the `multicall`.
+    function multicall(bytes[] calldata data)
+        external
+        payable
+        returns (bytes[] memory);
+
+    /*//////////////////////////////////////////////////////////////
                             NONCE MANAGEMENT
     //////////////////////////////////////////////////////////////*/
 
