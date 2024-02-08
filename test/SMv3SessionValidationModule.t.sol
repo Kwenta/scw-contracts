@@ -83,9 +83,7 @@ contract ValidateSessionParams is SMv3SessionValidationModuleTest {
             // ensure each valid selector is accepted
             funcCallData = abi.encode(validSelectors[i], bytes32(""));
 
-            if (
-                validSelectors[i] == EIP7412.fulfillOracleQuery.selector
-            ) {
+            if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector) {
                 // ONLY non-zero call values are valid when
                 // calling fulfillOracleQuery()
                 callValue = 1;
@@ -135,8 +133,7 @@ contract ValidateSessionParams is SMv3SessionValidationModuleTest {
             // ensure each valid selector is accepted
             funcCallData = abi.encode(validSelectors[i], bytes32(""));
 
-            if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector)
-            {
+            if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector) {
                 callValue = 0; // invalid for fulfillOracleQuery
             } else {
                 callValue = invalid_callValue;
@@ -225,8 +222,7 @@ contract ValidateSessionUserOp is SMv3SessionValidationModuleTest {
             // ensure each valid selector is accepted
             funcCallData = abi.encode(validSelectors[i], bytes32(""));
 
-            if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector)
-            {
+            if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector) {
                 callValue = 1; // valid for fulfillOracleQuery
             } else {
                 callValue = 0;
@@ -294,8 +290,7 @@ contract ValidateSessionUserOp is SMv3SessionValidationModuleTest {
             // ensure each valid selector is accepted
             funcCallData = abi.encode(validSelectors[i], bytes32(""));
 
-            if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector)
-            {
+            if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector) {
                 callValue = 0; // invalid for fulfillOracleQuery
             } else {
                 callValue = invalid_callValue;

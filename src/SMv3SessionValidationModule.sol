@@ -58,7 +58,6 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
             _sanitizeCallValue(funcSelector, callValue);
         }
 
-
         return sessionKey;
     }
 
@@ -148,9 +147,7 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
         internal
         pure
     {
-        if (
-            _selector == EIP7412.fulfillOracleQuery.selector
-        ) {
+        if (_selector == EIP7412.fulfillOracleQuery.selector) {
             if (_callValue != 0) {
                 revert InvalidCallValue();
             }
@@ -158,24 +155,21 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
     }
 
     /**
-    * @dev Processes and validates multicall data arrays, ensuring each call's selector is permitted and checks if
-    * `EIP7412.fulfillOracleQuery` is called, then validates the call value accordingly.
-    *
-    *
-    * @param _callData the data for the call. is parsed inside the SVM
-    * @param _callValue value to be sent with the call
-    *
-    * Note: This function does not return a value but may revert if it encounters an invalid function selector
-    * within the multicall data or if the call value does not comply with the prescribed validation rules,
-    * ensuring the contract's operational parameters are strictly adhered to.
-    */
+     * @dev Processes and validates multicall data arrays, ensuring each call's selector is permitted and checks if
+     * `EIP7412.fulfillOracleQuery` is called, then validates the call value accordingly.
+     *
+     *
+     * @param _callData the data for the call. is parsed inside the SVM
+     * @param _callValue value to be sent with the call
+     *
+     * Note: This function does not return a value but may revert if it encounters an invalid function selector
+     * within the multicall data or if the call value does not comply with the prescribed validation rules,
+     * ensuring the contract's operational parameters are strictly adhered to.
+     */
     function _decomposeAndSanitizeMulticallData(
         bytes calldata _callData,
         uint256 _callValue
-    )
-        internal
-        pure
-    {
+    ) internal pure {
         bytes[] memory multicallData = abi.decode(_callData[4:], (bytes[]));
 
         bool hasFulfillOracleQueryCall = false;
