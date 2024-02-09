@@ -24,13 +24,12 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
      * @dev validates that the call (destinationContract, callValue, funcCallData)
      * complies with the Session Key permissions represented by sessionKeyData
      * @param destinationContract address of the contract to be called
-     * @param callValue value to be sent with the call
      * @param _funcCallData the data for the call. is parsed inside the SVM
      * @param _sessionKeyData SessionKey data, that describes sessionKey permissions
      */
     function validateSessionParams(
         address destinationContract,
-        uint256 callValue,
+        uint256, /*callValue*/
         bytes calldata _funcCallData,
         bytes calldata _sessionKeyData,
         bytes calldata /*_callSpecificData*/
@@ -44,19 +43,7 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
         }
 
         /// @dev ensure the function selector is the a valid IEngine selector
-        bytes4 funcSelector = bytes4(_funcCallData[0:4]);
-
-        // sanitize the selector; ensure it is a valid selector
-        // that can be called on the smv3Engine
-        if (funcSelector == IEngine.multicall.selector) {
-            _decomposeAndSanitizeMulticallData(_funcCallData, callValue);
-        } else {
-            _sanitizeSelector(funcSelector);
-
-            // sanitize the call value; ensure it is zero unless calling
-            // IEngine.depositEth or EIP7412.fulfillOracleQuery
-            _sanitizeCallValue(funcSelector, callValue);
-        }
+        _sanitizeSelector(bytes4(_funcCallData[0:4]));
 
         return sessionKey;
     }
@@ -91,7 +78,7 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
         (address sessionKey, address smv3Engine) =
             abi.decode(_sessionKeyData, (address, address));
 
-        (address destinationContract, uint256 callValue,) = abi.decode(
+        (address destinationContract,,) = abi.decode(
             _op.callData[4:], // skip selector; already checked
             (address, uint256, bytes)
         );
@@ -111,12 +98,9 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
             data = _op.callData[4 + offset + 32:4 + offset + 32 + length];
         }
 
-        // define the function selector
-        bytes4 funcSelector = bytes4(data[0:4]);
-
         // sanitize the selector; ensure it is a valid selector
-        // that can be called on the smv3Engine)
-        _sanitizeSelector(funcSelector);
+        // that can be called on the smv3Engine
+        _sanitizeSelector(bytes4(data[0:4]));
 
         /// @dev this method of signature validation is out-of-date
         /// see https://github.com/OpenZeppelin/openzeppelin-sdk/blob/7d96de7248ae2e7e81a743513ccc617a2e6bba21/packages/lib/contracts/cryptography/ECDSA.sol#L6
@@ -130,64 +114,8 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
     /// @param _selector the selector to sanitize
     /// @dev will revert if the selector is not valid
     function _sanitizeSelector(bytes4 _selector) internal pure {
-        if (
-            _selector != IEngine.modifyCollateral.selector
-                && _selector != IEngine.commitOrder.selector
-                && _selector != IEngine.invalidateUnorderedNonces.selector
-                && _selector != EIP7412.fulfillOracleQuery.selector
-        ) {
+        if (_selector != IEngine.multicall.selector) {
             revert InvalidSMv3Selector();
-        }
-    }
-
-    /// @notice sanitize the call value to ensure it is zero unless calling EIP7412.fulfillOracleQuery
-    /// @param _selector the selector to sanitize
-    /// @dev will revert if the call value is not valid
-    function _sanitizeCallValue(bytes4 _selector, uint256 _callValue)
-        internal
-        pure
-    {
-        if (_selector == EIP7412.fulfillOracleQuery.selector) {
-            if (_callValue != 0) {
-                revert InvalidCallValue();
-            }
-        }
-    }
-
-    /**
-     * @dev Processes and validates multicall data arrays, ensuring each call's selector is permitted and checks if
-     * `EIP7412.fulfillOracleQuery` is called, then validates the call value accordingly.
-     *
-     *
-     * @param _callData the data for the call. is parsed inside the SVM
-     * @param _callValue value to be sent with the call
-     *
-     * Note: This function does not return a value but may revert if it encounters an invalid function selector
-     * within the multicall data or if the call value does not comply with the prescribed validation rules,
-     * ensuring the contract's operational parameters are strictly adhered to.
-     */
-    function _decomposeAndSanitizeMulticallData(
-        bytes calldata _callData,
-        uint256 _callValue
-    ) internal pure {
-        bytes[] memory multicallData = abi.decode(_callData[4:], (bytes[]));
-
-        bool hasFulfillOracleQueryCall = false;
-
-        for (uint256 i = 0; i < multicallData.length; i++) {
-            bytes4 selector = bytes4(abi.encodePacked(multicallData[i])[:4]);
-
-            _sanitizeSelector(selector);
-
-            if (selector == EIP7412.fulfillOracleQuery.selector) {
-                hasFulfillOracleQueryCall = true;
-            }
-        }
-
-        if (hasFulfillOracleQueryCall) {
-            _sanitizeCallValue(EIP7412.fulfillOracleQuery.selector, _callValue);
-        } else {
-            _sanitizeCallValue(IEngine.multicall.selector, _callValue);
         }
     }
 }
