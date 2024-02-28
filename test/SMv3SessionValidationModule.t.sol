@@ -10,7 +10,6 @@ import {
     UserOperationLib
 } from "test/utils/UserOperationSignature.sol";
 import {IEngine} from "src/kwenta/smv3/IEngine.sol";
-import {EIP7412} from "src/kwenta/smv3/EIP7412.sol";
 
 contract SMv3SessionValidationModuleTest is Bootstrap {
     address signer;
@@ -18,10 +17,6 @@ contract SMv3SessionValidationModuleTest is Bootstrap {
 
     address sessionKey;
     address smv3Engine;
-    bytes4 smv3ModifyCollateralSelector;
-    bytes4 smv3CommitOrderSelector;
-    bytes4 smv3InvalidateUnorderedNoncesSelector;
-    bytes4 smv3FulfillOracleQuerySelector;
     address destinationContract;
     uint256 callValue;
     bytes funcCallData;
@@ -37,10 +32,8 @@ contract SMv3SessionValidationModuleTest is Bootstrap {
     bytes32 userOpHash;
     bytes data;
 
-    bytes4[] public validSelectors;
-
     function setUp() public {
-        initializeOptimismGoerli();
+        initializeOptimismSepolia();
 
         userOpSignature = new UserOperationSignature();
 
@@ -55,9 +48,11 @@ contract SMv3SessionValidationModuleTest is Bootstrap {
         // validateSessionParams params
         destinationContract = smv3Engine;
         callValue = 0;
-        /// @notice a valid selector for IEngine
-        funcCallData =
-            abi.encode(IEngine.modifyCollateral.selector, bytes32(""));
+
+        bytes[] memory calls = new bytes[](0);
+
+        funcCallData = abi.encodeWithSelector(IEngine.multicall.selector, calls);
+
         sessionKeyData = abi.encode(sessionKey, smv3Engine);
         callSpecificData = "";
 
@@ -68,45 +63,21 @@ contract SMv3SessionValidationModuleTest is Bootstrap {
         userOpHash = userOpSignature.hashUserOperation(op);
         sessionKeySignature =
             userOpSignature.getUserOperationSignature(op, signerPrivateKey);
-
-        // define array of valid selectors
-        validSelectors.push(IEngine.modifyCollateral.selector);
-        validSelectors.push(IEngine.commitOrder.selector);
-        validSelectors.push(IEngine.invalidateUnorderedNonces.selector);
-        validSelectors.push(EIP7412.fulfillOracleQuery.selector);
-        validSelectors.push(IEngine.depositEth.selector);
-        validSelectors.push(IEngine.withdrawEth.selector);
     }
 }
 
 contract ValidateSessionParams is SMv3SessionValidationModuleTest {
     function test_validateSessionParams() public {
-        for (uint256 i; i < validSelectors.length; i++) {
-            // ensure each valid selector is accepted
-            funcCallData = abi.encode(validSelectors[i], bytes32(""));
+        address retSessionKey = smv3SessionValidationModule
+            .validateSessionParams(
+            destinationContract,
+            callValue,
+            funcCallData,
+            sessionKeyData,
+            callSpecificData
+        );
 
-            if (
-                validSelectors[i] == IEngine.depositEth.selector
-                    || validSelectors[i] == EIP7412.fulfillOracleQuery.selector
-            ) {
-                // ONLY non-zero call values are valid when
-                // calling depositEth() or fulfillOracleQuery()
-                callValue = 1;
-            } else {
-                callValue = 0;
-            }
-
-            address retSessionKey = smv3SessionValidationModule
-                .validateSessionParams(
-                destinationContract,
-                callValue,
-                funcCallData,
-                sessionKeyData,
-                callSpecificData
-            );
-
-            assertEq(sessionKey, retSessionKey);
-        }
+        assertEq(sessionKey, retSessionKey);
     }
 
     function test_validateSessionParams_destinationContract_invalid(
@@ -127,40 +98,6 @@ contract ValidateSessionParams is SMv3SessionValidationModuleTest {
             sessionKeyData,
             callSpecificData
         );
-    }
-
-    function test_validateSessionParams_callValue_invalid(
-        uint256 invalid_callValue
-    ) public {
-        vm.assume(invalid_callValue != callValue);
-
-        for (uint256 i; i < validSelectors.length; i++) {
-            // ensure each valid selector is accepted
-            funcCallData = abi.encode(validSelectors[i], bytes32(""));
-
-            if (validSelectors[i] == IEngine.depositEth.selector) {
-                callValue = 0; // i.e. invalid for depositEth
-            } else if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector)
-            {
-                callValue = 0; // valid for fulfillOracleQuery
-            } else {
-                callValue = invalid_callValue;
-            }
-
-            vm.expectRevert(
-                abi.encodeWithSelector(
-                    SMv3SessionValidationModule.InvalidCallValue.selector
-                )
-            );
-
-            smv3SessionValidationModule.validateSessionParams(
-                destinationContract,
-                callValue, // invalid
-                funcCallData,
-                sessionKeyData,
-                callSpecificData
-            );
-        }
     }
 
     function test_validateSessionParams_funcCallData_invalid() public {
@@ -226,34 +163,20 @@ contract ValidateSessionParams is SMv3SessionValidationModuleTest {
 
 contract ValidateSessionUserOp is SMv3SessionValidationModuleTest {
     function test_validateSessionUserOp() public {
-        for (uint256 i; i < validSelectors.length; i++) {
-            // ensure each valid selector is accepted
-            funcCallData = abi.encode(validSelectors[i], bytes32(""));
+        op.callData = abi.encodeWithSelector(
+            EXECUTE_SELECTOR, destinationContract, callValue, funcCallData
+        );
 
-            if (validSelectors[i] == IEngine.depositEth.selector) {
-                callValue = 1; // valid for depositEth
-            } else if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector)
-            {
-                callValue = 1; // valid for fulfillOracleQuery
-            } else {
-                callValue = 0; // invalid for depositEth
-            }
+        userOpHash = userOpSignature.hashUserOperation(op);
 
-            op.callData = abi.encodeWithSelector(
-                EXECUTE_SELECTOR, destinationContract, callValue, funcCallData
-            );
+        sessionKeySignature =
+            userOpSignature.getUserOperationSignature(op, signerPrivateKey);
 
-            userOpHash = userOpSignature.hashUserOperation(op);
+        bool ret = smv3SessionValidationModule.validateSessionUserOp(
+            op, userOpHash, sessionKeyData, sessionKeySignature
+        );
 
-            sessionKeySignature =
-                userOpSignature.getUserOperationSignature(op, signerPrivateKey);
-
-            bool ret = smv3SessionValidationModule.validateSessionUserOp(
-                op, userOpHash, sessionKeyData, sessionKeySignature
-            );
-
-            assertTrue(ret);
-        }
+        assertTrue(ret);
     }
 
     function test_validateSessionUserOp_op_callData_invalid(
@@ -296,37 +219,6 @@ contract ValidateSessionUserOp is SMv3SessionValidationModuleTest {
         );
 
         vm.assume(invalid_callValue != callValue);
-
-        for (uint256 i; i < validSelectors.length; i++) {
-            // ensure each valid selector is accepted
-            funcCallData = abi.encode(validSelectors[i], bytes32(""));
-
-            if (validSelectors[i] == IEngine.depositEth.selector) {
-                callValue = 0; // i.e. invalid for depositEth
-            } else if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector)
-            {
-                callValue = 0; // valid for fulfillOracleQuery
-            } else {
-                callValue = invalid_callValue;
-            }
-
-            op.callData = abi.encodeWithSelector(
-                EXECUTE_SELECTOR,
-                destinationContract,
-                callValue, // invalid
-                funcCallData
-            );
-
-            vm.expectRevert(
-                abi.encodeWithSelector(
-                    SMv3SessionValidationModule.InvalidCallValue.selector
-                )
-            );
-
-            smv3SessionValidationModule.validateSessionUserOp(
-                op, userOpHash, sessionKeyData, sessionKeySignature
-            );
-        }
 
         bytes memory invalid_funcCallData =
             abi.encode(invalid_selector, bytes32(""));

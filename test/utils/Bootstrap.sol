@@ -5,7 +5,7 @@ import {console2} from "lib/forge-std/src/console2.sol";
 import {
     SMv2SessionValidationModule,
     SMv3SessionValidationModule,
-    OptimismGoerliParameters,
+    OptimismSepoliaParameters,
     OptimismParameters,
     Setup
 } from "script/Deploy.s.sol";
@@ -20,8 +20,8 @@ contract Bootstrap is Test {
     SMv2SessionValidationModule public smv2SessionValidationModule;
     SMv3SessionValidationModule public smv3SessionValidationModule;
 
-    function initializeOptimismGoerli() public {
-        BootstrapOptimismGoerli bootstrap = new BootstrapOptimismGoerli();
+    function initializeOptimismSepolia() public {
+        BootstrapOptimismSepolia bootstrap = new BootstrapOptimismSepolia();
         (
             address smv2SessionValidationModuleAddress,
             address smv3SessionValidationModuleAddress
@@ -33,10 +33,10 @@ contract Bootstrap is Test {
             SMv3SessionValidationModule(smv3SessionValidationModuleAddress);
     }
 
-    /// @dev add other networks here as needed (ex: Base, BaseGoerli)
+    /// @dev add other networks here as needed (ex: Base, BaseSepolia)
 }
 
-contract BootstrapOptimismGoerli is Setup, OptimismGoerliParameters {
+contract BootstrapOptimismSepolia is Setup, OptimismSepoliaParameters {
     function init() public returns (address, address) {
         (
             address smv2SessionValidationModuleAddress,
@@ -50,4 +50,4 @@ contract BootstrapOptimismGoerli is Setup, OptimismGoerliParameters {
     }
 }
 
-// add other networks here as needed (ex: Base, BaseGoerli)
+// add other networks here as needed (ex: Base, BaseSepolia)
