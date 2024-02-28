@@ -10,7 +10,6 @@ import {
     UserOperationLib
 } from "test/utils/UserOperationSignature.sol";
 import {IEngine} from "src/kwenta/smv3/IEngine.sol";
-import {EIP7412} from "src/kwenta/smv3/EIP7412.sol";
 
 contract SMv3SessionValidationModuleTest is Bootstrap {
     address signer;

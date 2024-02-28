@@ -3,7 +3,6 @@ pragma solidity 0.8.18;
 
 import {ECDSA} from "src/openzeppelin/ECDSA.sol";
 import {IEngine} from "src/kwenta/smv3/IEngine.sol";
-import {EIP7412} from "src/kwenta/smv3/EIP7412.sol";
 import {
     ISessionValidationModule,
     UserOperation
