@@ -34,7 +34,7 @@ contract SMv3SessionValidationModuleTest is Bootstrap {
     bytes data;
 
     function setUp() public {
-        initializeOptimismGoerli();
+        initializeOptimismSepolia();
 
         userOpSignature = new UserOperationSignature();
 

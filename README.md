@@ -1,7 +1,7 @@
 # scw-contracts
 
-[![Github Actions][gha-badge]][gha] 
-[![Foundry][foundry-badge]][foundry] 
+[![Github Actions][gha-badge]][gha]
+[![Foundry][foundry-badge]][foundry]
 [![License: GPL-3.0][license-badge]][license]
 
 [gha]: https://github.com/Kwenta/scw-contracts/actions
@@ -57,10 +57,10 @@ npm run test
 ```
 
 4. Run specific test
-    > `OPTIMISM_GOERLI_RPC_URL` can be replaced with `OPTIMISM_RPC_URL` if a mainnet fork is desired
+    > `OPTIMISM_SEPOLIA_RPC_URL` can be replaced with `OPTIMISM_RPC_URL` if a mainnet fork is desired
 
 ```
-forge test --fork-url $(grep OPTIMISM_GOERLI_RPC_URL .env | cut -d '=' -f2) --match-test TEST_NAME -vvv
+forge test --fork-url $(grep OPTIMISM_SEPOLIA_RPC_URL .env | cut -d '=' -f2) --match-test TEST_NAME -vvv
 ```
 
 ## Deployment Addresses
@@ -68,9 +68,9 @@ forge test --fork-url $(grep OPTIMISM_GOERLI_RPC_URL .env | cut -d '=' -f2) --ma
 > See `deployments/` folder
 
 1. Optimism deployments found in `deployments/Optimism.json`
-2. Optimism Goerli deployments found in `deployments/OptimismGoerli.json`
+2. Optimism Sepolia deployments found in `deployments/OptimismSepolia.json`
 3. Base deployments found in `deployments/Base.json`
-4. Base Goerli deployments found in `deployments/BaseGoerli.json`
+4. Base Sepolia deployments found in `deployments/BaseSepolia.json`
 
 ## Audits
 
