@@ -42,7 +42,7 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
             revert InvalidDestinationContract();
         }
 
-        /// @dev ensure the function selector is the a valid IEngine selector
+        /// @dev ensure the function selector is the a `multicall` selector
         _sanitizeSelector(bytes4(_funcCallData[0:4]));
 
         return sessionKey;
